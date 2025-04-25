@@ -10,6 +10,12 @@ const {
   SlashCommandBuilder,
 } = require("discord.js");
 const axios = require("axios");
+const express = require("express");
+const bodyParser = require("body-parser");
+
+// Initialize Express app
+const app = express();
+app.use(bodyParser.json());
 
 // Khởi tạo Discord client
 const client = new Client({
@@ -198,6 +204,58 @@ client.on("messageCreate", async (message) => {
     console.error("Lỗi cập nhật từ thông báo GitLab:", result.error);
     await message.reply(`❌ Lỗi khi cập nhật task: ${result.error}`);
   }
+});
+
+// Web API endpoint to receive messages from Apps Script
+app.post("/send-message", async (req, res) => {
+  try {
+    // Verify secret token
+    const { secret, channelId, message } = req.body;
+    
+    if (secret !== WEBHOOK_SECRET) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized - Invalid secret token"
+      });
+    }
+
+    if (!channelId || !message) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required parameters: channelId and message"
+      });
+    }
+
+    // Get the channel and send message
+    const channel = client.channels.cache.get(channelId);
+    if (!channel) {
+      return res.status(404).json({
+        success: false,
+        error: "Channel not found"
+      });
+    }
+
+    await channel.send(message);
+    
+    res.json({
+      success: true,
+      data: {
+        message: "Message sent successfully"
+      }
+    });
+  } catch (error) {
+    console.error("Error sending message:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to send message: " + error.message
+    });
+  }
+});
+
+// Start Express server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);
