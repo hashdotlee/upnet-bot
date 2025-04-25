@@ -91,12 +91,11 @@ async function callAppScript(command, params = {}) {
       command,
       ...params,
     };
-    const resp = await axios.post(WEB_APP_URL, {
-		params: {
-			secret: WEBHOOK_SECRET,
-		},
-		data: payload
-	});
+    const resp = await axios.post(WEB_APP_URL, payload, {
+      params: {
+        secret: WEBHOOK_SECRET,
+      },
+    });
     if (resp.data && resp.data.success) {
       return resp.data;
     } else {
@@ -215,44 +214,43 @@ app.post("/send-message", async (req, res) => {
   try {
     // Verify secret token
     const { secret, channelId, message } = req.body;
-    
+
     if (secret !== WEBHOOK_SECRET) {
       return res.status(401).json({
         success: false,
-        error: "Unauthorized - Invalid secret token"
+        error: "Unauthorized - Invalid secret token",
       });
     }
 
     if (!channelId || !message) {
       return res.status(400).json({
         success: false,
-        error: "Missing required parameters: channelId and message"
+        error: "Missing required parameters: channelId and message",
       });
     }
-
 
     // Get the channel and send message
     const channel = client.channels.cache.get(channelId);
     if (!channel) {
       return res.status(404).json({
         success: false,
-        error: "Channel not found"
+        error: "Channel not found",
       });
     }
 
     await channel.send(message);
-    
+
     res.json({
       success: true,
       data: {
-        message: "Message sent successfully"
-      }
+        message: "Message sent successfully",
+      },
     });
   } catch (error) {
     console.error("Error sending message:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to send message: " + error.message
+      error: "Failed to send message: " + error.message,
     });
   }
 });
