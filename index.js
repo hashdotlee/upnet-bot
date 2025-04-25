@@ -88,11 +88,15 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 async function callAppScript(command, params = {}) {
   try {
     const payload = {
-      secret: WEBHOOK_SECRET,
       command,
       ...params,
     };
-    const resp = await axios.post(WEB_APP_URL, payload);
+    const resp = await axios.post(WEB_APP_URL, {
+		params: {
+			secret: WEBHOOK_SECRET,
+		},
+		data: payload
+	});
     if (resp.data && resp.data.success) {
       return resp.data;
     } else {
@@ -225,6 +229,7 @@ app.post("/send-message", async (req, res) => {
         error: "Missing required parameters: channelId and message"
       });
     }
+
 
     // Get the channel and send message
     const channel = client.channels.cache.get(channelId);
